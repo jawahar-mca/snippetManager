@@ -1,35 +1,21 @@
 'use client'
 
-/**
- * Single-page app with hash routing.
- * 
- * GitHub Pages serves static files only. Next.js dynamic routes like
- * /entry/[id] require knowing all IDs at build time — impossible since
- * they live in localStorage. Hash routing solves this: only one HTML
- * file (index.html) is ever served, and the client reads the hash to
- * decide what to render.
- *
- *   /#/           → Home
- *   /#/new        → New entry form
- *   /#/entry/:id  → Entry detail
- *   /#/edit/:id   → Edit entry
- */
-
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Plus, Search, Download, Upload, BookOpen, Hash, Cpu } from 'lucide-react'
+import { Plus, Search, Download, Upload, BookOpen, Hash, Cpu, Github, CloudOff, Cloud, Loader } from 'lucide-react'
 import { useEntries } from '@/hooks/useEntries'
 import { search } from '@/lib/search'
 import { exportEntries } from '@/lib/storage'
+import { isGitHubConfigured } from '@/lib/github'
 import EntryCard from '@/components/EntryCard'
 import SearchBar from '@/components/search/SearchBar'
 import LanguageFilter from '@/components/search/LanguageFilter'
 import EntryDetail from '@/components/EntryDetail'
-import { goto } from '@/lib/navigation'
-
 import EntryForm from '@/components/EntryForm'
+import GitHubSetup from '@/components/GitHubSetup'
 import { Language } from '@/types'
+import { cn } from '@/lib/utils'
 
-// ── Hash router ────────────────────────────────────────────────────────────────
+// ── Hash router ────────────────────────────────────────────────────────────
 
 type Route =
   | { view: 'home' }
@@ -47,52 +33,88 @@ function parseHash(hash: string): Route {
   return { view: 'home' }
 }
 
+function goto(hash: string) {
+  window.location.hash = hash
+}
 
-
-// ── App ────────────────────────────────────────────────────────────────────────
+// ── App root ───────────────────────────────────────────────────────────────
 
 export default function App() {
   const [route, setRoute] = useState<Route>({ view: 'home' })
+  const [showGitHubSetup, setShowGitHubSetup] = useState(false)
   const entriesState = useEntries()
-  const { entries, loading, remove, add, update, importAll } = entriesState
+  const { entries, loading, syncStatus, syncError, add, update, remove, importAll } = entriesState
 
   useEffect(() => {
-    function onHashChange() {
-      setRoute(parseHash(window.location.hash))
-    }
+    function onHashChange() { setRoute(parseHash(window.location.hash)) }
     onHashChange()
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
-  // ── Sub-views ──
   if (route.view === 'detail') {
-    return <EntryDetail id={route.id} onDelete={id => { remove(id); goto('/') }} />
+    return (
+      <>
+        <EntryDetail id={route.id} onDelete={id => { remove(id); goto('/') }} />
+        {showGitHubSetup && <GitHubSetup onClose={() => setShowGitHubSetup(false)} onSaved={() => window.location.reload()} />}
+      </>
+    )
   }
   if (route.view === 'new') {
     return <EntryForm onSave={entry => { add(entry); goto(`entry/${entry.id}`) }} />
   }
   if (route.view === 'edit') {
     const entry = entries.find(e => e.id === route.id)
-    if (!entry) return <div className="min-h-screen flex items-center justify-center text-vault-dim">Not found. <button className="ml-2 text-vault-bright underline" onClick={() => goto('/')}>Go back</button></div>
+    if (!entry) return (
+      <div className="min-h-screen flex items-center justify-center text-vault-dim">
+        Not found. <button className="ml-2 text-vault-bright underline" onClick={() => goto('/')}>Go back</button>
+      </div>
+    )
     return <EntryForm initial={entry} onSave={updated => { update(updated); goto(`entry/${updated.id}`) }} />
   }
 
-  // ── Home view ──
-  return <HomeView entries={entries} loading={loading} remove={remove} importAll={importAll} />
+  return (
+    <>
+      <HomeView
+        entries={entries}
+        loading={loading}
+        syncStatus={syncStatus}
+        syncError={syncError}
+        remove={remove}
+        importAll={importAll}
+        onOpenGitHubSetup={() => setShowGitHubSetup(true)}
+      />
+      {showGitHubSetup && (
+        <GitHubSetup
+          onClose={() => setShowGitHubSetup(false)}
+          onSaved={() => window.location.reload()}
+        />
+      )}
+    </>
+  )
 }
 
-// ── Home view component ────────────────────────────────────────────────────────
+// ── Home view ──────────────────────────────────────────────────────────────
 
-function HomeView({ entries, loading, remove, importAll }: {
+interface HomeViewProps {
   entries: ReturnType<typeof useEntries>['entries']
   loading: boolean
+  syncStatus: ReturnType<typeof useEntries>['syncStatus']
+  syncError: string | null
   remove: (id: string) => void
   importAll: (json: string) => boolean
-}) {
+  onOpenGitHubSetup: () => void
+}
+
+function HomeView({ entries, loading, syncStatus, syncError, remove, importAll, onOpenGitHubSetup }: HomeViewProps) {
   const [query, setQuery] = useState('')
   const [langFilter, setLangFilter] = useState<Language | 'all'>('all')
   const importRef = useRef<HTMLInputElement>(null)
+  const [githubConfigured, setGithubConfigured] = useState(false)
+
+  useEffect(() => {
+    setGithubConfigured(isGitHubConfigured())
+  }, [])
 
   const results = useMemo(() => {
     let list = search(query, entries)
@@ -137,6 +159,36 @@ function HomeView({ entries, loading, remove, importAll }: {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Sync status indicator */}
+            {syncStatus === 'syncing' && (
+              <span className="flex items-center gap-1 text-xs text-vault-dim">
+                <Loader size={12} className="animate-spin" /> Syncing…
+              </span>
+            )}
+            {syncStatus === 'error' && (
+              <span title={syncError ?? ''} className="flex items-center gap-1 text-xs text-vault-red cursor-help">
+                <CloudOff size={13} /> Sync failed
+              </span>
+            )}
+            {syncStatus === 'success' && githubConfigured && (
+              <span className="flex items-center gap-1 text-xs text-vault-green">
+                <Cloud size={13} /> Synced
+              </span>
+            )}
+
+            {/* GitHub setup button */}
+            <button
+              onClick={onOpenGitHubSetup}
+              title={githubConfigured ? 'GitHub sync configured' : 'Set up GitHub sync'}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                githubConfigured
+                  ? 'text-vault-green hover:bg-vault-surface'
+                  : 'text-vault-dim hover:text-vault-text hover:bg-vault-surface'
+              )}>
+              <Github size={16} />
+            </button>
+
             <button onClick={exportEntries} title="Export JSON"
               className="p-2 rounded-lg text-vault-dim hover:text-vault-text hover:bg-vault-surface transition-colors">
               <Download size={16} />
@@ -146,6 +198,7 @@ function HomeView({ entries, loading, remove, importAll }: {
               <Upload size={16} />
             </button>
             <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+
             <button onClick={() => goto('new')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vault-accent hover:bg-vault-bright transition-colors text-white text-sm font-medium">
               <Plus size={15} /> New Entry
@@ -190,7 +243,9 @@ function HomeView({ entries, loading, remove, importAll }: {
             <LanguageFilter selected={langFilter} onChange={setLangFilter} entries={entries} />
           </div>
           {loading ? (
-            <div className="flex items-center justify-center py-24 text-vault-dim">Loading...</div>
+            <div className="flex items-center justify-center py-24 text-vault-dim">
+              <Loader size={20} className="animate-spin mr-2" /> Loading…
+            </div>
           ) : results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Search size={40} className="text-vault-muted" />
