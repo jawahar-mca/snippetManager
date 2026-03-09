@@ -1,0 +1,30 @@
+// /** @type {import('next').NextConfig} */
+// const nextConfig = {
+//   output: 'export',
+//   trailingSlash: true,
+//   images: { unoptimized: true },
+//   // Change 'snippetmanager' to your actual GitHub repo name before deploying
+//   basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+//   assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
+// }
+// module.exports = nextConfig
+
+
+// /** @type {import('next').NextConfig} */
+// const nextConfig = {
+//   output: 'export',
+//   trailingSlash: true,
+//   images: { unoptimized: true },
+//   basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+//   assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
+// }
+// module.exports = nextConfig
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  trailingSlash: true,
+  images: { unoptimized: true },
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
+}
+module.exports = nextConfig
