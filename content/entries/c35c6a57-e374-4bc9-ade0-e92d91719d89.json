@@ -1,0 +1,18 @@
+{
+  "id": "c35c6a57-e374-4bc9-ade0-e92d91719d89",
+  "title": "two sum",
+  "topic": "Two Sum - gives all index for given target",
+  "tags": [],
+  "language": "javascript",
+  "explanation": "",
+  "codeBlocks": [
+    {
+      "id": "369a145d-4ecf-420b-bcb8-91c27e80a3d2",
+      "language": "typescript",
+      "code": "const arr = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]\n\nconst target = 15, results =[]\n\nfunction twoSum(arr, target){\n  \n  const seen = new Map();\n  \n  for (let i=0; i< arr.length;i++){\n    \n    const need = target - arr[i];\n    \n    if(seen.has(need)){\n      \n      results.push([seen.get(need), i])\n    }\n\nseen.set(arr[i],i)    \n    \n  }\n  \n  return results.length? results : null\n  \n  \n  \n}\n\nconsole.log(twoSum(arr, target))",
+      "caption": ""
+    }
+  ],
+  "createdAt": "2026-03-09T22:29:09.056Z",
+  "updatedAt": "2026-03-09T22:29:09.056Z"
+}
