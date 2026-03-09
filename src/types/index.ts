@@ -1,8 +1,7 @@
 export type Language =
   | 'typescript' | 'javascript' | 'python'
-  | 'react' | 'bash' | 'css' | 'html'
+  | 'react' | 'angular' | 'bash' | 'css' | 'html'
   | 'json' | 'sql' | 'other'
-
 export interface CodeBlock {
   id: string
   language: Language
