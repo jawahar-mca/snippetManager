@@ -19,9 +19,13 @@ export default function GitHubSetup({ onClose, onSaved }: Props) {
   const existing = loadGitHubConfig()
 
   const [token, setToken] = useState(existing?.token ?? '')
-  const [owner, setOwner] = useState(existing?.owner ?? 'jawahar-mca')
-  const [repo, setRepo] = useState(existing?.repo ?? 'snippetManager')
-  const [branch, setBranch] = useState(existing?.branch ?? 'main')
+  const [owner, setOwner] = useState(existing?.owner ?? process.env.NEXT_PUBLIC_GITHUB_OWNER ?? '')
+  const [repo, setRepo] = useState(existing?.repo ?? process.env.NEXT_PUBLIC_GITHUB_REPO ?? '')
+  const [branch, setBranch] = useState(existing?.branch ?? process.env.NEXT_PUBLIC_GITHUB_BRANCH ?? 'main')
+
+  // const [owner, setOwner] = useState(existing?.owner ?? 'jawahar-mca')
+  // const [repo, setRepo] = useState(existing?.repo ?? 'snippetManager')
+  // const [branch, setBranch] = useState(existing?.branch ?? 'main')
   const [status, setStatus] = useState<'idle' | 'validating' | 'valid' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [username, setUsername] = useState('')

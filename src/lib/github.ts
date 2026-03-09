@@ -13,14 +13,15 @@ const CONFIG_KEY = 'snippetmanager:github-config'
 
 // ── Config ─────────────────────────────────────────────────────────────────
 
-export function loadGitHubConfig(): GitHubConfig | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
-}
+// export function loadGitHubConfig(): GitHubConfig | null {
+//   if (typeof window === 'undefined') return null
+//   try {
+//     const raw = localStorage.getItem(CONFIG_KEY)
+//     return raw ? JSON.parse(raw) : null
+//   } catch { return null }
+// }
 
+ 
 export function saveGitHubConfig(config: GitHubConfig): void {
   localStorage.setItem(CONFIG_KEY, JSON.stringify(config))
 }
@@ -33,7 +34,20 @@ export function isGitHubConfigured(): boolean {
   const c = loadGitHubConfig()
   return !!(c?.token && c?.owner && c?.repo)
 }
+export function loadGitHubConfig(): GitHubConfig | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(CONFIG_KEY)
+    const saved = (raw ? JSON.parse(raw) : {}) as Partial<GitHubConfig>
 
+    return {
+      token:  saved.token  ?? '',
+      owner:  process.env.NEXT_PUBLIC_GITHUB_OWNER  ?? saved.owner  ?? '',
+      repo:   process.env.NEXT_PUBLIC_GITHUB_REPO   ?? saved.repo   ?? '',
+      branch: process.env.NEXT_PUBLIC_GITHUB_BRANCH ?? saved.branch ?? 'main',
+    }
+  } catch { return null }
+}
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function headers(token: string) {

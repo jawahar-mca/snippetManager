@@ -29,6 +29,9 @@ jobs:
         env:
           # Change 'snippetmanager' to your actual GitHub repository name
           NEXT_PUBLIC_BASE_PATH: /snippetManager
+          NEXT_PUBLIC_GITHUB_OWNER: jawahar-mca
+          NEXT_PUBLIC_GITHUB_REPO: snippetmanager-data
+          NEXT_PUBLIC_GITHUB_BRANCH: main
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
