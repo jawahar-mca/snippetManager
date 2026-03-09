@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { Plus, Trash2, ArrowLeft, Save } from 'lucide-react'
 import { Entry, CodeBlock, Language } from '@/types'
@@ -18,7 +17,6 @@ function emptyBlock(): CodeBlock {
 }
 
 export default function EntryForm({ initial, onSave }: Props) {
-  const router = useRouter()
   const isEdit = !!initial
 
   const [title,       setTitle]       = useState(initial?.title ?? '')
@@ -41,28 +39,21 @@ export default function EntryForm({ initial, onSave }: Props) {
     if (!validate()) return
     const now = new Date().toISOString()
     const entry: Entry = {
-      id:           initial?.id ?? uuidv4(),
-      title:        title.trim(),
-      topic:        topic.trim(),
-      tags:         tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
+      id:          initial?.id ?? uuidv4(),
+      title:       title.trim(),
+      topic:       topic.trim(),
+      tags:        tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
       language,
-      explanation:  explanation.trim(),
-      codeBlocks:   blocks,
-      createdAt:    initial?.createdAt ?? now,
-      updatedAt:    now,
+      explanation: explanation.trim(),
+      codeBlocks:  blocks,
+      createdAt:   initial?.createdAt ?? now,
+      updatedAt:   now,
     }
     onSave(entry)
-    router.push(`/entry/${entry.id}`)
   }
 
-  function addBlock() {
-    setBlocks(prev => [...prev, emptyBlock()])
-  }
-
-  function removeBlock(id: string) {
-    setBlocks(prev => prev.filter(b => b.id !== id))
-  }
-
+  function addBlock() { setBlocks(prev => [...prev, emptyBlock()]) }
+  function removeBlock(id: string) { setBlocks(prev => prev.filter(b => b.id !== id)) }
   function updateBlock(id: string, patch: Partial<CodeBlock>) {
     setBlocks(prev => prev.map(b => b.id === id ? { ...b, ...patch } : b))
   }
@@ -72,10 +63,9 @@ export default function EntryForm({ initial, onSave }: Props) {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-vault-border bg-vault-bg/90 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => router.back()}
+          <button onClick={() => window.history.back()}
             className="p-2 rounded-lg text-vault-dim hover:text-vault-text hover:bg-vault-surface transition-colors">
             <ArrowLeft size={16} />
           </button>
@@ -90,56 +80,43 @@ export default function EntryForm({ initial, onSave }: Props) {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
-
-        {/* Title */}
         <div>
           <label className={labelCls}>Title *</label>
           <input value={title} onChange={e => setTitle(e.target.value)}
-            placeholder="e.g. Find duplicate characters in a string"
-            className={inputCls} />
+            placeholder="e.g. Find duplicate characters in a string" className={inputCls} />
           {errors.title && <p className="text-xs text-vault-red mt-1">{errors.title}</p>}
         </div>
 
-        {/* Topic + Language */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Topic *</label>
             <input value={topic} onChange={e => setTopic(e.target.value)}
-              placeholder="e.g. Strings, Arrays, React Hooks"
-              className={inputCls} />
+              placeholder="e.g. Strings, Arrays, React Hooks" className={inputCls} />
             {errors.topic && <p className="text-xs text-vault-red mt-1">{errors.topic}</p>}
           </div>
           <div>
             <label className={labelCls}>Primary Language</label>
-            <select value={language} onChange={e => setLanguage(e.target.value as Language)}
-              className={inputCls}>
-              {ALL_LANGUAGES.map(l => (
-                <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>
-              ))}
+            <select value={language} onChange={e => setLanguage(e.target.value as Language)} className={inputCls}>
+              {ALL_LANGUAGES.map(l => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
             </select>
           </div>
         </div>
 
-        {/* Tags */}
         <div>
           <label className={labelCls}>Tags</label>
           <input value={tagsRaw} onChange={e => setTagsRaw(e.target.value)}
-            placeholder="duplicate, string, set, frequency  (comma-separated)"
-            className={inputCls} />
+            placeholder="duplicate, string, set, frequency  (comma-separated)" className={inputCls} />
           <p className="text-xs text-vault-dim mt-1">Comma-separated — these power the search.</p>
         </div>
 
-        {/* Explanation */}
         <div>
           <label className={labelCls}>Explanation / Notes</label>
           <textarea value={explanation} onChange={e => setExplanation(e.target.value)}
             placeholder={"## Problem\nDescribe the problem...\n\n## Approach\nExplain your solution...\n\n## Complexity\nTime: O(n)  Space: O(n)"}
-            rows={8}
-            className={cn(inputCls, 'resize-y font-mono text-xs leading-relaxed')} />
+            rows={8} className={cn(inputCls, 'resize-y font-mono text-xs leading-relaxed')} />
           <p className="text-xs text-vault-dim mt-1">Supports ## headings, **bold**, `code`</p>
         </div>
 
-        {/* Code blocks */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label className={labelCls}>Code Snippets</label>
@@ -151,18 +128,14 @@ export default function EntryForm({ initial, onSave }: Props) {
 
           {blocks.map((block, idx) => (
             <div key={block.id} className="rounded-xl border border-vault-border bg-vault-surface overflow-hidden">
-              {/* Block toolbar */}
               <div className="flex items-center gap-3 px-4 py-2.5 border-b border-vault-border bg-vault-card">
                 <span className="text-xs text-vault-dim font-mono shrink-0">#{idx + 1}</span>
                 <select value={block.language}
                   onChange={e => updateBlock(block.id, { language: e.target.value as Language })}
                   className="bg-transparent text-xs text-vault-text border border-vault-border rounded px-2 py-1 focus:outline-none focus:border-vault-bright/60">
-                  {ALL_LANGUAGES.map(l => (
-                    <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>
-                  ))}
+                  {ALL_LANGUAGES.map(l => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
                 </select>
-                <input value={block.caption ?? ''}
-                  onChange={e => updateBlock(block.id, { caption: e.target.value })}
+                <input value={block.caption ?? ''} onChange={e => updateBlock(block.id, { caption: e.target.value })}
                   placeholder="Caption (optional)"
                   className="flex-1 bg-transparent text-xs text-vault-dim placeholder:text-vault-dim/40 border-none focus:outline-none" />
                 {blocks.length > 1 && (
@@ -172,17 +145,11 @@ export default function EntryForm({ initial, onSave }: Props) {
                   </button>
                 )}
               </div>
-              {/* Monaco editor */}
-              <MonacoInput
-                code={block.code}
-                language={block.language}
-                onChange={code => updateBlock(block.id, { code })}
-                height="280px"
-              />
+              <MonacoInput code={block.code} language={block.language}
+                onChange={code => updateBlock(block.id, { code })} height="280px" />
             </div>
           ))}
         </div>
-
       </main>
     </div>
   )
