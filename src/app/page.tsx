@@ -150,7 +150,7 @@ function HomeView({ entries, loading, syncStatus, syncError, remove, importAll, 
               <Cpu size={16} className="text-white" />
             </div>
             <span className="font-display font-bold text-lg text-vault-text tracking-tight">
-              SnippetManager
+              Snippet Manager
             </span>
           </button>
 
